@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+# encoding utf-8
+# Created by: Acr4n1us
+# Contact & Changelog: https://github.com/RamalhoSec
+# Bitcoin: 3DppKRbA9Um3z4wnmVtkqnETnvwsip7WkC
+# Version 0.1
+
+
+
+#::seting terminal colors
+black=$(tput bold; tput setaf 0)
+red=$(tput bold; tput setaf 1)
+green=$(tput bold; tput setaf 2)
+yellow=$(tput bold; tput setaf 3)
+blue=$(tput bold; tput setaf 4)
+magenta=$(tput bold; tput setaf 5)
+cyan=$(tput bold; tput setaf 6)
+white=$(tput bold; tput setaf 7)
+reset=$(tput sgr0)
+#:::::::::::::::::::::::::
+
+
+
+#::verifications for start
+[ "$UID" != "0" ] && { printf "${blue}Ok, run this at root!${reset}\n"; exit 1 ;}
+#::::::::::::::::::::::::::
+
+
+
+#::seting global  default variables
+name="${white}mkmon${reset}"
+version="${blue}0.1${reset}"
+mode="Default"
+mon="mon1"
+#:::::::::::::::::::::::::
+
+
+
+#::logo and help
+f_logo() {
+    printf "${blue}
+    ${name}${version} ${green}http://github.com/RamalhoSec/mkmon${blue}
+    This tool was coded for create multiple virtual wifi monitor interfaces.
+    Look if you is conected at one AP, your channel is be fixed!.
+    How use: ./${name}${blue}
+    Direct use:    
+                -a     Add a monitor interface.
+                -r     Remove a monitor interface.
+                -i     Especify a base wireless interface.
+    Example: ./${name}${blue} -a <mon1> -i <wlan0> or ./${name}${blue} for easy mode${reset}\n\n"
+}
+#::::::::::::::::::::::::::
+
+
+
+#::seting wlan interface
+f_iface() {
+    printf "${blue}List of wlan interface: ${reset}\n${white}$(ifconfig | grep -e ': ' | sed -e 's/: .*//g' | sed -e 's/^//' | grep -n ^)${reset}\n${blue}Please select one interface:${white} ";read iface
+    iface=$(ifconfig | grep -e ': ' | sed -e 's/: .*//g' | sed -e 's/^//' | grep -n ^ | grep "${iface}:" | sed 's/\w://')
+}
+#:::::::::::::::::::::::::
+
+
+
+#::select function
+f_select() {
+    printf "${blue}Do you want add or remove: \n
+${white}[1]${blue}- Add a monitor\n
+${white}[2]${blue}- Remove a monitor\n
+            
+Please selece one option: ${white}"
+    read selectedop; echo "${reset}"
+    case $selectedop in
+    1) clear; f_logo; f_mkmon;;
+    2) clear; f_logo; f_rmmon;;
+    *) clear; f_logo; printf "${green}Please Select a valid option!${reset}\n"; f_select; printf "${reset}";;
+    esac
+}
+#:::::::::::::::::::::::::
+
+
+
+#::check and remove monitor
+f_rmmon() {
+m_count="$(echo -n $(iw dev | grep -o 'mon[0-9]' | wc -l))"
+if [ "$m_count" == "0" ]; then
+    printf "${red}No mon interfaces to destroy!${reset}\n"
+   exit 1
+else
+n_count=$(($m_count-1))
+   for n in $(seq 1 $m_count); do
+       iw dev mon$n del 2>&1>/dev/null; wait
+   done
+       printf "${blue}$mon Are gone!!${reset}\n"
+fi
+}
+#:::::::::::::::::::::::::
+
+
+
+#::create single mon interface
+f_mkmon(){
+    ifconfig $iface down; wait
+    iw dev $iface interface add $mon type monitor; wait
+    macchanger -r $mon 2>&1 | grep -o '\[ERROR\]'; wait
+    ifconfig $iface up ; ifconfig $mon up
+    systemctl restart NetworkManager.service
+    printf "${blue}$mon was created!!${reset}\n"; iwconfig $mon
+}
+#:::::::::::::::::::::::::
+
+
+
+#::start tool
+case $1 in 
+--help) f_logo;;
+-h) f_logo;;
+-a) mon="$2"; iface="$4"; f_mkmon;;
+-r) mon="$2"; iface="$4"; f_rmmon;;
+*) f_logo; f_iface; f_select;;
+esac
+#:::::::::::::::::::::::::
+
+
+
+#::debug area
+#:::::::::::::::::::::::::
