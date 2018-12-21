@@ -89,7 +89,7 @@ case $1 in
 	--help)f_logo; f_help;;
 	-h)f_logo; f_help;;
 	--mk)mon=$2; key=$3; iface=$4; op=$5; addr=$6;f_logo; echo; f_mkmon;;
-	--rm)mon=$2; iface=$4; f_logo; echo; f_rmmon;;
+	--rm)mon=$2; key=$3; iface=$4; f_logo; echo; f_rmmon;;
 	*)f_logo; f_help;;
 esac
 ######################################################
